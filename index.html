@@ -159,7 +159,7 @@ utop</code></pre>
   <h3>Getting ocaml-tiff running</h3>
 <pre><code>git clone https://github.com/geocaml/ocaml-tiff
 cd ocaml-tiff
-opam switch create . --deps-only --with-test   <span class="c"># a switch just for this repo</span>
+opam switch create . --deps-only --with-test --with-dev-setup   <span class="c"># a switch just for this repo, with ocamlformat</span>
 eval $(opam env)
 dune build
 dune test</code></pre>
