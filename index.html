@@ -1,0 +1,636 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>OCaml through ocaml-tiff</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Black and white only, single light theme. Layout: a single reading column with a sticky level rail on wide screens; each level = concept, real code from the repo, try-it, exercise. */
+:root{
+  --bg:#FFFFFF; --surface:#FFFFFF; --ink:#000000; --muted:#444444; --line:#000000;
+  --accent:#000000; --accent-soft:#F0F0F0; --amber:#000000; --amber-soft:#F5F5F5;
+  --code-bg:#000000; --code-fg:#FFFFFF; --code-kw:#FFFFFF; --code-cm:#AAAAAA; --code-str:#FFFFFF;
+  --display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --body:"IBM Plex Sans",ui-sans-serif,system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:16px/1.65 var(--body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 64px}
+.wrap{max-width:1120px;margin:0 auto;display:grid;grid-template-columns:220px minmax(0,1fr);gap:48px}
+@media (max-width:900px){.wrap{grid-template-columns:minmax(0,1fr)} nav.rail{display:none}}
+nav.rail{position:sticky;top:env(safe-area-inset-top,0px);align-self:start;padding-top:40px;font-size:13.5px;max-height:100vh;overflow:auto}
+nav.rail a{display:flex;gap:10px;color:var(--muted);text-decoration:none;padding:4px 0}
+nav.rail a:hover,nav.rail a:focus-visible{color:var(--accent)}
+nav.rail .n{font-family:var(--mono);font-size:12px;width:22px;flex:none;color:var(--accent)}
+nav.rail a.done{color:var(--ink)} nav.rail a.done .n::after{content:" ✓"}
+main{min-width:0}
+header.hero{padding:48px 0 28px;border-bottom:1px solid var(--line)}
+.bytes{font-family:var(--mono);font-size:13px;color:var(--muted);letter-spacing:.06em;display:flex;flex-wrap:wrap;gap:6px 10px}
+.bytes b{color:var(--accent);font-weight:600}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(34px,6vw,56px);line-height:1.05;margin:14px 0 14px;text-wrap:balance;letter-spacing:-.02em}
+.lede{font-size:18px;max-width:64ch;color:var(--muted);margin:0}
+h2{font-family:var(--display);font-weight:800;font-size:28px;line-height:1.15;margin:0 0 6px;text-wrap:balance}
+h3{font-family:var(--display);font-weight:600;font-size:19px;margin:24px 0 6px}
+p,li{max-width:68ch}
+section.level{padding:44px 0 8px;border-bottom:1px solid var(--line);scroll-margin-top:16px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.eyebrow .where{color:var(--muted);letter-spacing:.02em;text-transform:none}
+code{font-family:var(--mono);font-size:.88em;background:var(--accent-soft);padding:1px 5px;border-radius:4px}
+pre{background:var(--code-bg);color:var(--code-fg);font:13.5px/1.6 var(--mono);padding:16px 18px;border-radius:8px;overflow-x:auto;margin:12px 0}
+pre code{background:none;padding:0;font-size:inherit;color:inherit}
+pre .k{color:var(--code-kw);font-weight:600} pre .c{color:var(--code-cm);font-style:italic} pre .s{color:var(--code-str)}
+.file{font-family:var(--mono);font-size:12px;color:var(--muted);margin:16px 0 -6px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin:16px 0}
+.grid2>div{min-width:0}
+.try{border:1px dashed var(--line);border-radius:8px;padding:12px 16px;margin:16px 0}
+.try .lbl,.ex .lbl{font-family:var(--mono);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase}
+.try .lbl{color:var(--accent)}
+.ex{background:var(--amber-soft);border:1px solid var(--line);border-radius:8px;padding:14px 18px;margin:18px 0}
+.ex .lbl{color:var(--amber)}
+.ex p{margin:6px 0}
+details{margin-top:8px}
+summary{cursor:pointer;color:var(--amber);font-weight:600}
+summary:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.mark{display:flex;align-items:center;gap:8px;margin:18px 0 0;font-size:14px;color:var(--muted)}
+.mark input{width:18px;height:18px;accent-color:var(--accent)}
+table{border-collapse:collapse;font-size:14px;width:100%}
+.tbl{overflow-x:auto;margin:12px 0}
+th,td{text-align:left;padding:8px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600}
+td code{white-space:nowrap}
+ol.trace{padding-left:22px} ol.trace li{margin:6px 0}
+.progress{font-family:var(--mono);font-size:13px;color:var(--muted);margin-top:18px}
+.progress span{color:var(--accent);font-weight:600}
+a{color:var(--accent)}
+@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+<nav class="rail" aria-label="Levels" id="rail"></nav>
+<main>
+
+<header class="hero">
+  <div class="bytes" aria-label="A big-endian TIFF header"><b>4D 4D</b> 00 2A <span>00 00 00 08</span> <span>· "MM", magic 42, first IFD at byte 8</span></div>
+  <h1>Learn OCaml by reading ocaml-tiff</h1>
+  <p class="lede">A zero-to-hero path through the geocaml/ocaml-tiff code you already worked on for Outreachy. Every concept is taught from a real piece of this repo, in the order you need it to read the library from top to bottom. Each level ends with a small exercise you can try in <code>utop</code> or in the repo.</p>
+  <p class="progress">Progress: <span id="count">0</span> of <span id="total">0</span> levels marked done (saved in this browser only).</p>
+</header>
+
+<!-- 0 -->
+<section class="level" id="l0" data-title="Map &amp; tools">
+  <div class="eyebrow">Level 0 <span class="where">dune-project · src/dune · test/dune</span></div>
+  <h2>The map and the tools</h2>
+  <p>Before any syntax, know where things live. ocaml-tiff is about 3,800 lines. Almost all the logic is in three files.</p>
+  <div class="tbl"><table>
+    <tr><th>File</th><th>Lines</th><th>What it does</th></tr>
+    <tr><td><code>src/ifd.ml</code></td><td>1299</td><td>Reads the header and the Image File Directory (the list of tags: width, compression, predictor…)</td></tr>
+    <tr><td><code>src/tiff.ml</code></td><td>628</td><td>The public API: <code>from_file</code>, <code>data</code>, <code>make</code>, <code>to_file</code>. Walks strips and fills the pixel array.</td></tr>
+    <tr><td><code>src/lzw.ml</code></td><td>98</td><td>LZW decompression</td></tr>
+    <tr><td><code>src/deflate.ml</code></td><td>43</td><td>Deflate, via the <code>decompress</code> library</td></tr>
+    <tr><td><code>src/endian.ml</code></td><td>51</td><td>Read/write 16/32/64-bit numbers in big or little endian</td></tr>
+    <tr><td><code>src/file.ml</code></td><td>10</td><td>Two type aliases: how to read and write bytes at an offset</td></tr>
+    <tr><td><code>src/unix</code>, <code>src/eio</code></td><td>~40</td><td>Two ways to supply those read/write functions</td></tr>
+    <tr><td><code>test/test_tiff.ml</code></td><td>738</td><td>OUnit2 tests, each run twice (Eio and Unix)</td></tr>
+  </table></div>
+  <p><b>dune</b> is the build system. Each folder with a <code>dune</code> file is a library or executable. <code>src/dune</code> says “this folder is the library <code>tiff</code> and it uses <code>fmt cstruct optint decompress.zl bstr</code>”. Every <code>.ml</code> file in it becomes a module: <code>ifd.ml</code> becomes <code>Ifd</code>, <code>lzw.ml</code> becomes <code>Lzw</code>.</p>
+<pre><code>dune build              <span class="c"># compile everything</span>
+dune test               <span class="c"># run test/test_tiff.exe and friends</span>
+dune fmt                <span class="c"># ocamlformat 0.29.0, as pinned in dune-project</span>
+dune utop src           <span class="c"># a REPL with the tiff library loaded</span></code></pre>
+  <div class="ex"><div class="lbl">Exercise</div>
+    <p>Run <code>dune utop src</code> and type <code>Tiff.Ifd.predictor_of_int 2;;</code>. What does it print, and why do you need the <code>;;</code>?</p>
+    <details><summary>Answer</summary><p><code>- : Tiff.Ifd.predictor = Tiff.Ifd.HorizontalDifferencing</code>. The REPL shows the type and the value. <code>;;</code> only tells the toplevel “run this now”; source files don't need it.</p></details>
+  </div>
+  <label class="mark"><input type="checkbox" id="done-l0"> I've done level 0</label>
+</section>
+
+<!-- 1 -->
+<section class="level" id="l1" data-title="let &amp; functions">
+  <div class="eyebrow">Level 1 <span class="where">src/endian.ml</span></div>
+  <h2>let, functions and types you never write</h2>
+  <p><code>let</code> names a value. A function is just a value that takes arguments. Arguments are separated by spaces, not commas, and OCaml infers every type. Here is the first function in <code>endian.ml</code>:</p>
+<div class="file">src/endian.ml</div>
+<pre><code><span class="k">type</span> endianness = Big | Little
+
+<span class="k">let</span> uint16 ?(offset = 0) endian buf =
+  <span class="k">match</span> endian <span class="k">with</span>
+  | Big -&gt; Cstruct.BE.get_uint16 buf offset
+  | Little -&gt; Cstruct.LE.get_uint16 buf offset</code></pre>
+  <ul>
+    <li><code>?(offset = 0)</code> is an <b>optional argument</b> with a default. Callers write <code>Endian.uint16 ~offset:2 e buf</code> or leave it out.</li>
+    <li>There is no <code>return</code>. The last expression is the result.</li>
+    <li>The type, worked out for you, is <code>?offset:int -&gt; endianness -&gt; Cstruct.t -&gt; int</code>. Read each <code>-&gt;</code> as “then”.</li>
+  </ul>
+  <h3>Composition with <code>|&gt;</code></h3>
+<pre><code><span class="k">let</span> set_float32 ?(offset = 0) endian buf value =
+  Int32.bits_of_float value |&gt; set_uint32 ~offset endian buf</code></pre>
+  <p><code>x |&gt; f</code> means <code>f x</code>. It lets you read left to right: “turn the float into bits, then write them”. Your PR used the same idea: <code>(Tiff.ifd tiff |&gt; Tiff.Ifd.predictor)</code>.</p>
+  <h3>Integers are not floats</h3>
+  <p><code>+ - * /</code> work on <code>int</code> only. Floats use <code>+. -. *. /.</code>. There's no automatic conversion: you call <code>float_of_int</code> or <code>Int64.to_int</code> yourself. That's why ifd.ml is full of <code>Int64.to_int</code>.</p>
+  <div class="try"><div class="lbl">Try it</div>
+<pre><code><span class="k">let</span> add a b = a + b;;        <span class="c">(* val add : int -&gt; int -&gt; int *)</span>
+<span class="k">let</span> add5 = add 5;;           <span class="c">(* partial application: a new function *)</span>
+add5 10;;                     <span class="c">(* 15 *)</span></code></pre></div>
+  <div class="ex"><div class="lbl">Exercise</div>
+    <p>Write <code>let uint8_or_16 ~bytes endian buf offset = …</code>, which reads one sample of 1 or 2 bytes. It's the <code>get</code> helper inside <code>undo_horizontal_differencing</code>.</p>
+    <details><summary>Answer</summary>
+<pre><code><span class="k">let</span> uint8_or_16 ~bytes endian buf offset =
+  <span class="k">if</span> bytes = 1 <span class="k">then</span> Cstruct.get_uint8 buf offset
+  <span class="k">else</span> Tiff.Endian.uint16 ~offset endian buf</code></pre>
+<p><code>~offset</code> on its own is shorthand for <code>~offset:offset</code> (called “punning”).</p></details>
+  </div>
+  <label class="mark"><input type="checkbox" id="done-l1"> I've done level 1</label>
+</section>
+
+<!-- 2 -->
+<section class="level" id="l2" data-title="Variants &amp; match">
+  <div class="eyebrow">Level 2 <span class="where">src/ifd.ml · tag, compression, predictor</span></div>
+  <h2>Variants and pattern matching</h2>
+  <p>A <b>variant</b> type lists every possible case. A case can carry data. This is how the library turns TIFF's magic numbers into readable names:</p>
+<div class="file">src/ifd.ml:366</div>
+<pre><code><span class="k">type</span> predictor = No_predictor | HorizontalDifferencing | Unknown <span class="k">of</span> int
+
+<span class="k">let</span> predictor_of_int = <span class="k">function</span>
+  | 1 -&gt; No_predictor
+  | 2 -&gt; HorizontalDifferencing
+  | i -&gt; Unknown i</code></pre>
+  <ul>
+    <li><code>function</code> is shorthand for <code>fun x -&gt; match x with</code>.</li>
+    <li><code>Unknown of int</code> keeps the raw number, so a file with predictor 3 isn't lost. It ends up as <code>Unknown 3</code>.</li>
+    <li>The last pattern <code>i</code> catches everything else and binds it to a name.</li>
+  </ul>
+  <p>The compiler checks that a <code>match</code> covers every case. In <code>apply_predictor</code> (tiff.ml:258) all three predictor cases are handled. Delete the <code>Ifd.Unknown n</code> line and <code>dune build</code> warns that the match is non-exhaustive. That warning is the reason OCaml code is hard to break by accident.</p>
+  <h3>Matching on several values at once</h3>
+<div class="file">src/tiff.ml:113 (get_plane)</div>
+<pre><code><span class="k">match</span> (planar_configuration, plane) <span class="k">with</span>
+| Planar, Some p -&gt; p
+| Planar, None -&gt; invalid_arg <span class="s">"Must specify plane for data read"</span>
+| Chunky, None | Chunky, Some 0 -&gt; 0
+| Chunky, Some _ -&gt; invalid_arg <span class="s">"Can not select plane on single plane TIFFs"</span>
+| Unknown _, _ -&gt; invalid_arg <span class="s">"Unknown planar format TIFF"</span></code></pre>
+  <p>Build a tuple, then match its shape. <code>|</code> between two patterns means “either”, and <code>_</code> means “anything, I don't need it”.</p>
+  <h3>Same constructor name in two types</h3>
+  <p><code>Unknown</code> appears in <code>tag</code>, <code>predictor</code>, <code>sample_format</code>, <code>photometric_interpretation</code> and <code>planar_configuration</code>. OCaml picks the right one from the expected type. When it can't tell, you qualify it: <code>Ifd.Unknown n</code>. That's why your PR first failed with <code>Horizontal</code>: the constructor is called <code>HorizontalDifferencing</code>.</p>
+  <div class="ex"><div class="lbl">Exercise</div>
+    <p>Write <code>predictor_to_string : predictor -&gt; string</code>. Then add a fourth case, <code>FloatingPoint</code> (value 3), to the type and see which functions the compiler makes you fix.</p>
+    <details><summary>Answer</summary>
+<pre><code><span class="k">let</span> predictor_to_string = <span class="k">function</span>
+  | No_predictor -&gt; <span class="s">"none"</span>
+  | HorizontalDifferencing -&gt; <span class="s">"horizontal"</span>
+  | Unknown n -&gt; Printf.sprintf <span class="s">"unknown %d"</span> n</code></pre>
+<p>Adding <code>FloatingPoint</code> breaks <code>predictor_to_int</code> and <code>apply_predictor</code>. <code>predictor_of_int</code> still compiles, because its <code>i -&gt; Unknown i</code> catches 3. That's the silent case to watch for.</p></details>
+  </div>
+  <label class="mark"><input type="checkbox" id="done-l2"> I've done level 2</label>
+</section>
+
+<!-- 3 -->
+<section class="level" id="l3" data-title="Records &amp; option">
+  <div class="eyebrow">Level 3 <span class="where">ifd.ml header · tiff.ml window</span></div>
+  <h2>Records, option and no null</h2>
+<div class="grid2">
+<div><div class="file">src/ifd.ml:3</div>
+<pre><code><span class="k">type</span> header = {
+  kind : tiff_kind;
+  byte_order : endianness;
+  offset : Optint.Int63.t;
+}
+<span class="k">and</span> tiff_kind = Tiff | Bigtiff</code></pre></div>
+<div><div class="file">src/tiff.ml:34</div>
+<pre><code><span class="k">type</span> window = {
+  xoff : int; yoff : int;
+  xsize : int; ysize : int;
+}</code></pre></div>
+</div>
+  <p>A record is a struct with named fields. You build one with <code>{ byte_order; kind; offset }</code>, which is punning again: each field takes the variable of the same name. You read a field with <code>header.byte_order</code>. <code>and</code> lets two types refer to each other.</p>
+  <h3>Copy with changes</h3>
+  <p>Records are immutable by default. To “change” one, you make a copy with some fields replaced:</p>
+<pre><code>{ ifd <span class="k">with</span> entries }        <span class="c">(* ifd.ml:1042, cache_all_entries *)</span></code></pre>
+  <h3><code>option</code> instead of null</h3>
+  <p>OCaml has no null. A value that might be missing has type <code>'a option</code>, which is either <code>None</code> or <code>Some x</code>, and the compiler makes you handle both:</p>
+<div class="file">src/ifd.ml:1025</div>
+<pre><code><span class="k">let</span> next_ifd t =
+  <span class="k">if</span> Optint.Int63.(equal zero t.next_ifd) <span class="k">then</span> None
+  <span class="k">else</span> Some (v ~file_offset:t.next_ifd t.header t.ro)</code></pre>
+  <p><code>Optint.Int63.(equal zero …)</code> is a <b>local open</b>: inside the brackets you can write <code>equal</code> and <code>zero</code> without the module prefix.</p>
+  <h3>Guards with <code>when</code></h3>
+<div class="file">src/tiff.ml:451 (caching in data)</div>
+<pre><code><span class="k">match</span> t.data <span class="k">with</span>
+| Some data
+  <span class="k">when</span> t.window = Some window &amp;&amp; t.plane = Some plane
+       &amp;&amp; t.image_nb = Some image_nb -&gt;
+    data
+| Some _ | None -&gt; <span class="c">(* read it again *)</span> …</code></pre>
+  <div class="ex"><div class="lbl">Exercise</div>
+    <p>Write <code>window_area : window -&gt; int</code>, then <code>full_window : width:int -&gt; height:int -&gt; window</code>. Compare yours with <code>Data.get_window</code> (tiff.ml:94).</p>
+    <details><summary>Answer</summary>
+<pre><code><span class="k">let</span> window_area w = w.xsize * w.ysize
+<span class="k">let</span> full_window ~width ~height =
+  { xoff = 0; yoff = 0; xsize = width; ysize = height }</code></pre></details>
+  </div>
+  <label class="mark"><input type="checkbox" id="done-l3"> I've done level 3</label>
+</section>
+
+<!-- 4 -->
+<section class="level" id="l4" data-title="Lists &amp; folds">
+  <div class="eyebrow">Level 4 <span class="where">ifd.ml lookup · tiff.ml compute_data_offsets</span></div>
+  <h2>Lists, higher-order functions and folds</h2>
+  <p>A list is written <code>[ 1; 2; 3 ]</code> (semicolons, not commas). <code>x :: rest</code> puts <code>x</code> on the front, and <code>@</code> joins two lists. Functions that take other functions do most of the work:</p>
+<div class="file">src/ifd.ml:465</div>
+<pre><code><span class="k">let</span> lookup e tag = List.find_opt (<span class="k">fun</span> e -&gt; e.tag = tag) e
+<span class="k">let</span> lookup_exn e tag = List.find (<span class="k">fun</span> e -&gt; e.tag = tag) e</code></pre>
+  <p><code>fun e -&gt; …</code> is an anonymous function. The <code>_opt</code> version returns an <code>option</code>, while the <code>_exn</code> version raises <code>Not_found</code>. The standard library follows this naming everywhere.</p>
+  <h3>fold_left: a loop with an accumulator</h3>
+<div class="file">src/tiff.ml:368</div>
+<pre><code><span class="k">let</span> compute_data_offsets strip_bytecounts start_offset =
+  <span class="k">let</span> _, data_offsets =
+    List.fold_left
+      (<span class="k">fun</span> (current_offset, acc) count -&gt;
+        (current_offset + count, current_offset :: acc))
+      (start_offset, []) strip_bytecounts
+  <span class="k">in</span>
+  List.rev data_offsets</code></pre>
+  <p>The state is a pair: the running offset and the list built so far. Each strip adds its own start to the list and moves the offset on. Building with <code>::</code> puts the list in reverse order, so <code>List.rev</code> fixes it at the end. You'll see this pattern all over OCaml code.</p>
+  <p>The same idea shows up in <code>List.fold_left Int.add 0 bits_per_sample</code> (tiff.ml:131), which is just a sum.</p>
+  <div class="try"><div class="lbl">Try it</div>
+<pre><code>List.map (<span class="k">fun</span> b -&gt; b / 8) [8; 8; 8];;           <span class="c">(* [1; 1; 1] *)</span>
+List.init 3 (<span class="k">fun</span> _ -&gt; 16);;                      <span class="c">(* [16; 16; 16], see make at tiff.ml:510 *)</span>
+List.fold_left ( + ) 0 [8; 8; 8];;               <span class="c">(* 24 *)</span></code></pre></div>
+  <div class="ex"><div class="lbl">Exercise</div>
+    <p>Call <code>compute_data_offsets [100; 100; 40] 8</code> in your head. Then write it again with a <code>let rec</code> loop instead of a fold.</p>
+    <details><summary>Answer</summary><p><code>[8; 108; 208]</code>.</p>
+<pre><code><span class="k">let</span> offsets counts start =
+  <span class="k">let rec</span> go off = <span class="k">function</span>
+    | [] -&gt; []
+    | c :: rest -&gt; off :: go (off + c) rest
+  <span class="k">in</span>
+  go start counts</code></pre></details>
+  </div>
+  <label class="mark"><input type="checkbox" id="done-l4"> I've done level 4</label>
+</section>
+
+<!-- 5 -->
+<section class="level" id="l5" data-title="Recursion">
+  <div class="eyebrow">Level 5 <span class="where">lzw.ml get_bits · tiff.ml all_ifds</span></div>
+  <h2>Recursion, including the tail-recursive kind</h2>
+  <p>A function that calls itself has to be declared with <code>let rec</code>. Here is the bit reader that LZW is built on:</p>
+<div class="file">src/lzw.ml</div>
+<pre><code><span class="k">let rec</span> get_bits bytedata offset count =
+  <span class="k">match</span> count <span class="k">with</span>
+  | 0 -&gt; 0
+  | n -&gt;
+      <span class="k">let</span> byte = int_of_char (Cstruct.get_char bytedata (offset / 8)) <span class="k">in</span>
+      <span class="k">let</span> bitoffset = offset <span class="k">mod</span> 8 <span class="k">in</span>
+      <span class="k">let</span> bit = (byte <span class="k">lsr</span> (7 - bitoffset)) <span class="k">land</span> 1 <span class="k">in</span>
+      (bit <span class="k">lsl</span> (n - 1)) + get_bits bytedata (offset + 1) (n - 1)</code></pre>
+  <p>It reads one bit, shifts it into place, and adds the rest. <code>let … in</code> introduces a local name for the expression that follows.</p>
+  <h3>Walking a linked chain of IFDs</h3>
+<div class="file">src/tiff.ml:392</div>
+<pre><code><span class="k">let</span> all_ifds first_ifd =
+  <span class="k">let rec</span> aux acc ifd =
+    <span class="k">match</span> Ifd.next_ifd ifd <span class="k">with</span>
+    | None -&gt; acc
+    | Some ifd' -&gt; aux (ifd' :: acc) ifd'
+  <span class="k">in</span>
+  aux [ first_ifd ] first_ifd |&gt; List.rev |&gt; Array.of_list</code></pre>
+  <p>The recursive call to <code>aux</code> is the very last thing it does. That makes it a <b>tail call</b>, which OCaml turns into a loop, so no stack builds up. <code>get_bits</code> is not tail-recursive (it still has a <code>+</code> to do after the call), but it never goes deeper than 12.</p>
+  <p>The LZW <code>decode</code> function is one large tail-recursive <code>inner</code> that carries its state (input offset, output offset, code size, next code, previous string) as arguments instead of using variables. Read it once you're comfortable with this level.</p>
+  <div class="ex"><div class="lbl">Exercise</div>
+    <p>What does <code>get_bits (Cstruct.of_string "\xA0") 0 3</code> return? (0xA0 is <code>1010 0000</code>.) Check your answer against <code>test/test_lzw.ml</code>.</p>
+    <details><summary>Answer</summary><p>The first three bits are <code>101</code>, which is 5. The test <code>test_all_bit_width</code> checks this as <code>v lsr (8 - i)</code>.</p></details>
+  </div>
+  <label class="mark"><input type="checkbox" id="done-l5"> I've done level 5</label>
+</section>
+
+<!-- 6 -->
+<section class="level" id="l6" data-title="Mutation &amp; loops">
+  <div class="eyebrow">Level 6 <span class="where">tiff.ml process_data · undo_horizontal_differencing</span></div>
+  <h2>Mutation, loops and arrays</h2>
+  <p>OCaml is functional first, but it's happy to mutate when that's faster. The strip walker in <code>process_data</code> (tiff.ml:122) uses every imperative tool there is:</p>
+  <div class="tbl"><table>
+    <tr><th>Syntax</th><th>Meaning</th><th>Where</th></tr>
+    <tr><td><code>let r = ref 0</code></td><td>A mutable box</td><td><code>row_index</code>, <code>x_offset</code></td></tr>
+    <tr><td><code>!r</code></td><td>Read the box (not “not”!)</td><td><code>!row_index + inner_row</code></td></tr>
+    <tr><td><code>r := v</code></td><td>Write the box</td><td><code>x_offset := !x_offset + 1</code></td></tr>
+    <tr><td><code>for i = a to b do … done</code></td><td>Loop, both ends inclusive</td><td><code>for strip = first_strip to last_strip - 1</code></td></tr>
+    <tr><td><code>while c do … done</code></td><td>While loop</td><td>the pixel loop</td></tr>
+    <tr><td><code>a.(i)</code>, <code>a.(i) &lt;- v</code></td><td>Array get and set</td><td><code>strip_bytecounts.(strip)</code>, the LZW <code>dict</code></td></tr>
+    <tr><td><code>mutable field</code>, <code>t.f &lt;- v</code></td><td>A record field you can change</td><td><code>t.data &lt;- Some data</code> (tiff.ml:462)</td></tr>
+    <tr><td><code>e1; e2</code></td><td>Do <code>e1</code> (it must return <code>unit</code>), then <code>e2</code></td><td>everywhere</td></tr>
+  </table></div>
+  <h3>Your code: undoing the predictor</h3>
+<div class="file">src/tiff.ml:246</div>
+<pre><code><span class="k">for</span> r = 0 <span class="k">to</span> rows - 1 <span class="k">do</span>
+  <span class="k">let</span> row_start = r * samples_per_row <span class="k">in</span>
+  <span class="k">for</span> i = samples_per_pixel <span class="k">to</span> samples_per_row - 1 <span class="k">do</span>
+    <span class="k">let</span> position = row_start + i <span class="k">in</span>
+    <span class="k">let</span> left = get (position - samples_per_pixel) <span class="k">in</span>
+    <span class="k">let</span> value = (get position + left) <span class="k">land</span> mask <span class="k">in</span>
+    set position value
+  <span class="k">done</span>
+<span class="k">done</span></code></pre>
+  <p><code>unit</code> is the type of “nothing useful came back”, written <code>()</code>. A <code>for</code> body has to return <code>unit</code>, which is why <code>set</code> returns <code>()</code>. When you call something whose result you want to throw away, write <code>let _ : int = preadv … in</code> (tiff_unix.ml), so it's clear you meant to.</p>
+  <div class="ex"><div class="lbl">Exercise</div>
+    <p>A grey 8-bit row is stored as differences <code>[100; 5; 251; 10]</code>. Run the loop above by hand with <code>samples_per_pixel = 1</code>. What pixels come out?</p>
+    <details><summary>Answer</summary><p>100, then 100+5 = 105, then (105+251) land 255 = 100, then 110. The mask makes 251 behave like −5.</p></details>
+  </div>
+  <label class="mark"><input type="checkbox" id="done-l6"> I've done level 6</label>
+</section>
+
+<!-- 7 -->
+<section class="level" id="l7" data-title="Modules &amp; .mli">
+  <div class="eyebrow">Level 7 <span class="where">tiff.mli · ifd.mli · module Data</span></div>
+  <h2>Modules, interfaces and hidden types</h2>
+  <p>Every file is a module. A matching <code>.mli</code> file is its <b>interface</b>: only what's listed there is visible to the outside. <code>ifd.ml</code> has 1,299 lines and <code>ifd.mli</code> has 268, so the rest is private.</p>
+<div class="grid2">
+<div><div class="file">src/ifd.mli</div>
+<pre><code><span class="k">type</span> t
+<span class="c">(** An image file directory *)</span>
+
+<span class="k">val</span> width : t -&gt; int
+<span class="k">val</span> predictor : t -&gt; predictor</code></pre></div>
+<div><div class="file">src/ifd.ml:299</div>
+<pre><code><span class="k">type</span> t = {
+  entries : entry list;
+  data_offsets : int list;
+  …
+  ro : File.ro;
+  next_ifd : Optint.Int63.t;
+}</code></pre></div>
+</div>
+  <p><code>type t</code> with no <code>=</code> is an <b>abstract type</b>. Users can hold an <code>Ifd.t</code> and pass it to <code>Ifd.width</code>, but they can't see or touch its fields. That's why your test calls <code>Tiff.Ifd.predictor</code> instead of reading the field directly.</p>
+  <h3>Modules inside files, and re-exporting</h3>
+<pre><code><span class="k">module</span> Data = <span class="k">struct</span> … <span class="k">end</span>          <span class="c">(* tiff.ml:36, a sub-module *)</span>
+<span class="k">module</span> Ifd = Ifd                      <span class="c">(* tiff.ml:5, so users can write Tiff.Ifd *)</span>
+<span class="k">module</span> Private = <span class="k">struct</span> <span class="k">module</span> Lzw = Lzw <span class="k">end</span>  <span class="c">(* exposed only for tests *)</span></code></pre>
+  <p>In <code>tiff.mli</code>, <code>module Data : sig … end</code> is the signature of the sub-module. <code>Private</code> is a convention: it's public so <code>test_lzw.ml</code> can reach <code>Tiff.Private.Lzw.get_bits</code>, and the name warns everyone else not to use it.</p>
+  <h3>Doc comments</h3>
+  <p><code>(** … *)</code> (two stars) is documentation that odoc picks up. <code>(* … *)</code> is an ordinary comment. <code>{! Tiff.File.ro}</code> inside a doc comment is a cross-reference.</p>
+  <div class="ex"><div class="lbl">Exercise</div>
+    <p><code>undo_horizontal_differencing</code> isn't in <code>tiff.mli</code>. Can a test call it? What would you have to change, and why might the maintainers not want that?</p>
+    <details><summary>Answer</summary><p>No. You'd have to expose it, for example through <code>Private</code>. That's why your PR tests the predictor end to end, by comparing a plain file with a predictor file, instead of testing the helper directly. It keeps the public API small.</p></details>
+  </div>
+  <label class="mark"><input type="checkbox" id="done-l7"> I've done level 7</label>
+</section>
+
+<!-- 8 -->
+<section class="level" id="l8" data-title="Functions as values">
+  <div class="eyebrow">Level 8 <span class="where">file.ml · tiff_unix.ml · process_data callbacks</span></div>
+  <h2>Functions as values, labels and callbacks</h2>
+  <p>This is the library's best design idea. It never opens a file itself. It only asks for <i>a function that reads bytes at an offset</i>:</p>
+<div class="file">src/file.ml</div>
+<pre><code><span class="k">type</span> ro = file_offset:Optint.Int63.t -&gt; Cstruct.t list -&gt; unit</code></pre>
+  <p><code>file_offset:</code> in a type is a <b>labelled argument</b>, and callers must write <code>~file_offset:x</code>. Unix and Eio each give back a function of this type:</p>
+<div class="grid2">
+<div><div class="file">src/unix/tiff_unix.ml</div>
+<pre><code><span class="k">let</span> of_fd fd : Tiff.File.ro =
+ <span class="k">fun</span> ~file_offset bufs -&gt;
+  <span class="k">let</span> _ : int =
+    preadv fd (Array.of_list bufs) file_offset <span class="k">in</span>
+  ()</code></pre></div>
+<div><div class="file">src/eio/tiff_eio.ml</div>
+<pre><code><span class="k">let</span> with_open_in path fn =
+  Eio.Path.with_open_in path @@ <span class="k">fun</span> r -&gt;
+  <span class="k">let</span> ro = Eio.File.pread_exact r <span class="k">in</span>
+  fn ro</code></pre></div>
+</div>
+  <p><code>f @@ x</code> means <code>f x</code>, but it binds loosely, so <code>@@ fun r -&gt; …</code> passes the whole rest of the block as a callback. The tests read like this: <code>with_ro backend path @@ fun ro -&gt; …</code>.</p>
+  <h3>Resource safety</h3>
+<pre><code>Fun.protect ~finally:(<span class="k">fun</span> () -&gt; Unix.close fd) (<span class="k">fun</span> () -&gt; fn (of_fd fd))</code></pre>
+  <p>This always closes the file, even if <code>fn</code> raises an exception. It works like <code>try/finally</code>.</p>
+  <h3>One walker, two jobs</h3>
+  <p><code>process_data</code> takes three callbacks: <code>~on_strip ~on_value ~after_strip</code>. <code>read_data</code> passes callbacks that decompress and fill the array, and <code>write_data</code> passes callbacks that copy from the array and write. It's the same loop for both, so reading and writing can't disagree about strip layout.</p>
+  <p>Labels also guard against mixing up arguments. That's why Patrick asked for <code>~width ~samples_per_pixel ~bytes_per_sample ~endian</code>: four ints in a row are easy to swap, but four labelled ints aren't.</p>
+  <div class="ex"><div class="lbl">Exercise</div>
+    <p>Write a fake <code>File.ro</code> that serves bytes from a string in memory, so you could test without a file on disk.</p>
+    <details><summary>Answer</summary>
+<pre><code><span class="k">let</span> ro_of_string s : Tiff.File.ro =
+ <span class="k">fun</span> ~file_offset bufs -&gt;
+  <span class="k">let</span> off = ref (Optint.Int63.to_int file_offset) <span class="k">in</span>
+  List.iter (<span class="k">fun</span> b -&gt;
+    <span class="k">let</span> n = Cstruct.length b <span class="k">in</span>
+    <span class="k">if</span> !off + n &gt; String.length s <span class="k">then</span> raise End_of_file;
+    Cstruct.blit_from_string s !off b 0 n;
+    off := !off + n) bufs</code></pre></details>
+  </div>
+  <label class="mark"><input type="checkbox" id="done-l8"> I've done level 8</label>
+</section>
+
+<!-- 9 -->
+<section class="level" id="l9" data-title="Errors">
+  <div class="eyebrow">Level 9 <span class="where">failwith · invalid_arg · Not_found · Result</span></div>
+  <h2>Errors: exceptions and Result</h2>
+  <div class="tbl"><table>
+    <tr><th>Tool</th><th>Raises</th><th>Used for</th></tr>
+    <tr><td><code>failwith "msg"</code></td><td><code>Failure</code></td><td>The file is bad or unsupported (<code>"Unsupported compression"</code>, your bit-depth message)</td></tr>
+    <tr><td><code>invalid_arg "msg"</code></td><td><code>Invalid_argument</code></td><td>The caller used the API wrongly (no plane given for a planar TIFF)</td></tr>
+    <tr><td><code>Fmt.invalid_arg "%a" pp x</code></td><td><code>Invalid_argument</code></td><td>The same, with a formatted message</td></tr>
+    <tr><td><code>List.find</code>, <code>lookup_exn</code></td><td><code>Not_found</code></td><td>A tag is missing</td></tr>
+    <tr><td><code>assert false</code></td><td><code>Assert_failure</code></td><td>“This can't happen” (ifd.ml make_entry)</td></tr>
+  </table></div>
+  <h3>Catching: defaults for missing tags</h3>
+<div class="file">src/ifd.ml:902</div>
+<pre><code><span class="k">let</span> predictor t =
+  <span class="k">try</span>
+    <span class="k">let</span> entry = lookup_exn t.entries Predictor <span class="k">in</span>
+    Int64.to_int (get_immediate entry) |&gt; predictor_of_int
+  <span class="k">with</span> Not_found -&gt; No_predictor</code></pre>
+  <p>The TIFF spec says a missing Predictor tag means 1 (none), and this code implements exactly that. <code>samples_per_pixel</code> and <code>sample_format</code> follow the same pattern.</p>
+  <h3>Result and polymorphic variants</h3>
+<div class="file">src/deflate.ml</div>
+<pre><code><span class="k">match</span> Zl.Higher.uncompress ~allocate ~refill ~flush input output <span class="k">with</span>
+| Ok () -&gt; ()
+| Error (`Msg err) -&gt; failwith (<span class="s">"DEFLATE decompression error: "</span> ^ err)</code></pre>
+  <p><code>('a, 'e) result</code> is <code>Ok x | Error e</code>, so the error is a value instead of an exception. A backtick name like <code>`Msg</code> is a <b>polymorphic variant</b>: a constructor you can use without declaring a type first. <code>^</code> joins two strings.</p>
+  <h3>Formatted messages</h3>
+  <p><code>Printf.sprintf "…%d…" n</code> builds a string, and the compiler checks that <code>%d</code> gets an int. The <code>\</code> at the end of a line inside a string continues it on the next line and drops the leading spaces. Your bit-depth error message uses that.</p>
+  <div class="ex"><div class="lbl">Exercise</div>
+    <p>Rewrite <code>predictor</code> using <code>lookup</code> (the <code>option</code> version) instead of <code>try … with</code>.</p>
+    <details><summary>Answer</summary>
+<pre><code><span class="k">let</span> predictor t =
+  <span class="k">match</span> lookup t.entries Predictor <span class="k">with</span>
+  | None -&gt; No_predictor
+  | Some e -&gt; Int64.to_int (get_immediate e) |&gt; predictor_of_int</code></pre></details>
+  </div>
+  <label class="mark"><input type="checkbox" id="done-l9"> I've done level 9</label>
+</section>
+
+<!-- 10 -->
+<section class="level" id="l10" data-title="Bytes &amp; bits">
+  <div class="eyebrow">Level 10 <span class="where">Cstruct · Bigarray · Optint · bit tricks</span></div>
+  <h2>Bytes, bits and big arrays</h2>
+  <div class="tbl"><table>
+    <tr><th>Library</th><th>What it is</th><th>In this repo</th></tr>
+    <tr><td><code>Cstruct.t</code></td><td>A view of raw bytes with typed getters: <code>get_uint8</code>, <code>BE.get_uint16</code>…</td><td>Every strip buffer and header buffer</td></tr>
+    <tr><td><code>Bigarray.Genarray.t</code></td><td>An N-dimensional array of numbers, outside the OCaml heap</td><td>The image you get back: <code>[| height; width |]</code> or <code>[| height; width; channels |]</code></td></tr>
+    <tr><td><code>Optint.Int63.t</code></td><td>A 63-bit int on every platform, used for file offsets</td><td><code>header.offset</code>, <code>~file_offset</code></td></tr>
+    <tr><td><code>int32</code>, <code>int64</code></td><td>Exact-width integers with their own modules (<code>Int64.to_int</code>)</td><td>IFD counts, 32-bit samples</td></tr>
+  </table></div>
+  <h3>Bit operators</h3>
+  <p><code>lsl</code> and <code>lsr</code> shift left and right, <code>asr</code> shifts right keeping the sign, and <code>land lor lxor</code> are AND, OR and XOR. Here's how a signed 8-bit value is read:</p>
+<div class="file">src/tiff.ml:43</div>
+<pre><code><span class="k">let</span> read_int8_value buf buf_index _ =
+  (Cstruct.get_uint8 buf buf_index <span class="k">lsl</span> (Sys.int_size - 8))
+  <span class="k">asr</span> (Sys.int_size - 8)</code></pre>
+  <p>It pushes the byte to the top of the native int, then uses an arithmetic shift to bring it back down so the sign bit spreads. So 0xFF becomes −1. OCaml ints are 63 bits on 64-bit machines (one bit is used by the runtime), which is why the code uses <code>Sys.int_size</code> instead of 64.</p>
+  <p>Your mask, <code>(1 lsl (8 * bytes_per_sample)) - 1</code>, gives 255 or 65535.</p>
+  <h3>Flattening for tests</h3>
+  <p>Your <code>assert_equal_ba</code> uses <code>Bigarray.reshape_1 a size</code> to view any N-D array as one long 1-D array without copying, then compares element by element. That way a failure reports the exact index.</p>
+  <div class="ex"><div class="lbl">Exercise</div>
+    <p>What does <code>Endian.int16</code> return for the bytes <code>FF FE</code> in big endian? Work it out, then check it in utop with <code>Tiff.Endian.int16 Big (Cstruct.of_string "\xff\xfe")</code>.</p>
+    <details><summary>Answer</summary><p><code>uint16</code> reads 0xFFFE = 65534. Sign-extending from 16 bits gives −2.</p></details>
+  </div>
+  <label class="mark"><input type="checkbox" id="done-l10"> I've done level 10</label>
+</section>
+
+<!-- 11 -->
+<section class="level" id="l11" data-title="GADTs">
+  <div class="eyebrow">Level 11 <span class="where">tiff.ml kind · get_repr · (type a b)</span></div>
+  <h2>GADTs: types that follow the data</h2>
+  <p>This is the hardest idea in the codebase. When you ask for <code>Tiff.from_file Tiff.Uint16 ro</code>, the array you get back has type <code>(int, int16_unsigned_elt) Data.t</code>. When you ask for <code>Float32</code>, you get a float array. The way the value you pass decides the type you get back is a <b>GADT</b> (generalised algebraic data type):</p>
+<div class="file">src/tiff.ml:9</div>
+<pre><code><span class="k">type</span> ('repr, 'kind) kind =
+  | Uint8 : (int, Bigarray.int8_unsigned_elt) kind
+  | Uint16 : (int, Bigarray.int16_unsigned_elt) kind
+  | Float32 : (float, Bigarray.float32_elt) kind
+  …</code></pre>
+  <p>Each constructor fills in the type parameters itself. <code>'repr</code> is the OCaml type you work with (<code>int</code>, <code>float</code>, <code>int32</code>), and <code>'kind</code> is the storage type Bigarray uses.</p>
+  <h3>Locally abstract types</h3>
+<div class="file">src/tiff.ml:414</div>
+<pre><code><span class="k">let</span> get_repr (<span class="k">type</span> repr kind) (t : (repr, kind) t) ifd plane :
+    (repr, kind) Bigarray.kind
+    * (Cstruct.t -&gt; int -&gt; Endian.endianness -&gt; repr) * … =
+  <span class="k">match</span> (t.data_type, sample_format, bpp) <span class="k">with</span>
+  | Uint8, UnsignedInteger, 8 -&gt; (Bigarray.int8_unsigned, Data.read_uint8_value, …)
+  | Float32, IEEEFloatingPoint, 32 -&gt; (Bigarray.float32, Data.read_float32_value, …)
+  | typ, fmt, bpp -&gt; Fmt.invalid_arg <span class="s">"datatype not correct for plane: …"</span></code></pre>
+  <p><code>(type repr kind)</code> names the type parameters so each branch can <i>refine</i> them. In the <code>Uint8</code> branch the compiler knows <code>repr = int</code>, so returning an int reader type-checks. In the <code>Float32</code> branch it knows <code>repr = float</code>. Without the annotation, the branches would have to agree on one type.</p>
+  <p>This is also why <code>test_load_data_as_wrong_type_fails</code> exists. If you ask for <code>Int8</code> on a uint8 file, it falls through to the last case and raises.</p>
+  <p>Read <code>bits_per_sample_of_kind</code> (tiff.ml:336) and <code>of_ba_kind</code> (inside <code>make</code>), which go the other way: from a Bigarray kind to TIFF metadata.</p>
+  <div class="ex"><div class="lbl">Exercise</div>
+    <p>Why does <code>pp_kind</code> (tiff.ml:19) start with <code>(type r k)</code>? Remove it and read the compiler error.</p>
+    <details><summary>Answer</summary><p>Each constructor has different type parameters. To match on all of them in one function, the parameters must be locally abstract so each branch can refine them. Without it you get an error like “this pattern matches values of type (float, …) kind but a pattern was expected which matches values of type (int, …) kind”.</p></details>
+  </div>
+  <label class="mark"><input type="checkbox" id="done-l11"> I've done level 11</label>
+</section>
+
+<!-- 12 -->
+<section class="level" id="l12" data-title="Testing">
+  <div class="eyebrow">Level 12 <span class="where">test/test_tiff.ml · test/dune</span></div>
+  <h2>Testing with OUnit2</h2>
+<div class="file">test/test_tiff.ml:679</div>
+<pre><code><span class="k">let</span> suite fs =
+  <span class="k">let</span> tests backend = [
+    <span class="s">"Test LZW predictor and NoCompress agree"</span> &gt;:: test_lzw_predictor_cea backend;
+    …
+  ] <span class="k">in</span>
+  <span class="s">"Basic Tests"</span> &gt;::: [ <span class="s">"Eio"</span> &gt;::: tests (Eio fs); <span class="s">"Unix"</span> &gt;::: tests Unix ]</code></pre>
+  <ul>
+    <li><code>"name" &gt;:: f</code> makes one test. <code>f</code> takes a test context, which is the <code>_</code> at the end of every <code>test_… backend _</code>.</li>
+    <li><code>"name" &gt;::: [ … ]</code> groups tests. Each test is listed twice (once for each backend), which is why the run shows double the count.</li>
+    <li><code>test_lzw_predictor_cea backend</code> is partial application from Level 1: the backend is filled in now, and the context comes later.</li>
+    <li><code>type backend = Eio of … | Unix</code> is a variant, so <code>with_ro</code> just matches on it.</li>
+  </ul>
+  <h3>Asserting well</h3>
+<pre><code><span class="k">let</span> assert_equal_int = assert_equal ~printer:Int.to_string</code></pre>
+  <p>Without <code>~printer</code>, a failure only says “not equal”. With it, you see both values. That's why Patrick wanted <code>assert_equal_ba</code>: plain <code>assert_equal</code> on two big arrays can't print them usefully.</p>
+  <p><code>test/dune</code> runs the binary with <code>-runner sequential</code> because OUnit's default runner forks, and that breaks Eio.</p>
+  <div class="ex"><div class="lbl">Exercise</div>
+    <p>Using <code>check_predictor_matches</code>, write the test you'd add for a predictor file with 8-bit planar data, and say which data file you'd need.</p>
+    <details><summary>Answer</summary>
+<pre><code><span class="k">let</span> test_lzw_predictor_planar backend _ =
+  check_predictor_matches backend Tiff.Uint8 <span class="s">"./data/planar.tiff"</span>
+    <span class="s">"./data/planar_lzw_predictor.tiff"</span></code></pre>
+<p>It won't work as written: planar files need <code>~plane</code> in <code>Tiff.data</code>. That's the follow-up tracked in #87.</p></details>
+  </div>
+  <label class="mark"><input type="checkbox" id="done-l12"> I've done level 12</label>
+</section>
+
+<!-- 13 -->
+<section class="level" id="l13" data-title="C stubs">
+  <div class="eyebrow">Level 13 <span class="where">src/unix/tiff_unix.ml · lzw.ml Unsafe</span></div>
+  <h2>Talking to C with external</h2>
+<pre><code><span class="k">external</span> preadv : Unix.file_descr -&gt; Cstruct.t array -&gt; Optint.Int63.t -&gt; int
+  = <span class="s">"caml_tiff_preadv"</span></code></pre>
+  <p><code>external</code> declares an OCaml name for a C function. The C code lives in <code>tiff_unix_stubs.c</code>, and <code>src/unix/dune</code> compiles it through <code>(foreign_stubs (language c) (names tiff_unix_stubs))</code>. <code>lzw.ml</code> does the same with a runtime primitive, <code>caml_blit_string_to_bigstring</code>, marked <code>[@@noalloc]</code> to promise that the C side never allocates. That makes the call cheaper.</p>
+  <p>That's why Eio is optional in <code>src/eio/dune</code> (<code>(optional)</code>) while the core <code>tiff</code> library depends on neither. The core stays pure OCaml, and the I/O is plugged in from outside (Level 8).</p>
+  <label class="mark"><input type="checkbox" id="done-l13"> I've done level 13</label>
+</section>
+
+<!-- trace -->
+<section class="level" id="trace" data-title="Full read path">
+  <div class="eyebrow">Hero <span class="where">every level in one call</span></div>
+  <h2>Trace one read from end to end</h2>
+  <p>Open the files side by side and follow <code>Tiff.data tiff ro</code> on an LZW file with a predictor, for example <code>u16bit_rgb_lzw_predictor_be.tiff</code> from your PR.</p>
+  <ol class="trace">
+    <li><code>Tiff_unix.with_open_in path @@ fun ro -&gt;</code> gives you a <code>File.ro</code> closure (L8).</li>
+    <li><code>Tiff.from_file Tiff.Uint16 ro</code> (tiff.ml:400) calls <code>Ifd.read_header</code>, which reads 16 bytes and matches <code>"MM"</code> to <code>Big</code> and magic 42 to <code>Tiff</code> (L2, L3).</li>
+    <li><code>Ifd.v</code> (ifd.ml:943) reads the entry count and then every 12-byte entry: tag, field type, count, and either an immediate value or an offset (L6, L10).</li>
+    <li><code>all_ifds</code> follows <code>next_ifd</code> until it hits 0 (L5).</li>
+    <li><code>Tiff.data</code> (tiff.ml:442) checks the cache with a <code>when</code> guard, picks a reader with the <code>get_repr</code> GADT (L3, L11), and calls <code>Data.read_data</code>.</li>
+    <li><code>read_data</code> creates a <code>Genarray</code> of <code>[| h; w; 3 |]</code> and hands three callbacks to <code>process_data</code> (L8).</li>
+    <li>For each strip, <code>on_strip</code> reads the compressed bytes, then <code>Lzw.decode</code> runs, then <code>apply_predictor</code>, which matches <code>HorizontalDifferencing</code> and <code>Chunky</code> to get stride 3 and runs your loop with <code>~endian:Big</code> (L2, L6).</li>
+    <li>For each pixel and channel, <code>on_value</code> reads 2 bytes with <code>Endian.uint16</code> and calls <code>Genarray.set arr [| y; x; c |]</code> (L1, L10).</li>
+    <li>The test compares the result with the uncompressed <code>u16bit.tiff</code> using <code>assert_equal_ba</code> (L12).</li>
+  </ol>
+  <p>If you can explain every step of this list without the links, you can read any PR on this repo.</p>
+</section>
+
+<!-- next -->
+<section class="level" id="next" data-title="What next">
+  <div class="eyebrow">After this</div>
+  <h2>Where to go from here</h2>
+  <ul>
+    <li><b>Read in this order:</b> endian.ml, file.ml, lzw.ml, the top half of ifd.ml (types and conversions), <code>Ifd.v</code>, then tiff.ml from <code>from_file</code> down.</li>
+    <li><b>Real World OCaml</b> (dev.realworldocaml.org) for variants, records, error handling and GADTs. Its GADT chapter explains Level 11 in depth.</li>
+    <li><b>OCaml.org “Tour of OCaml” and the Bigarray manual page</b> for the standard library.</li>
+    <li><b>The TIFF 6.0 spec</b> (Section 2 for the header and IFD, Section 14 for the predictor), so you know what the code is trying to do.</li>
+    <li><b>Small next contributions:</b> handle <code>Uint32</code> in <code>get_repr</code> (it currently says “coming soon”), add tile support (the tile accessors already exist in ifd.mli), or planar predictor support (#87).</li>
+  </ul>
+</section>
+
+</main>
+</div>
+
+<script>
+(function(){
+  var sections=[].slice.call(document.querySelectorAll('section.level'));
+  var rail=document.getElementById('rail');
+  sections.forEach(function(s){
+    var a=document.createElement('a'); a.href='#'+s.id; a.id='nav-'+s.id;
+    var n=document.createElement('span'); n.className='n';
+    n.textContent=/^l\d+$/.test(s.id)?s.id.slice(1):'•';
+    var t=document.createElement('span'); t.innerHTML=s.getAttribute('data-title');
+    a.appendChild(n); a.appendChild(t); rail.appendChild(a);
+  });
+  var boxes=[].slice.call(document.querySelectorAll('.mark input'));
+  document.getElementById('total').textContent=boxes.length;
+  var saved={};
+  try{saved=JSON.parse(localStorage.getItem('ocaml-tiff-progress')||'{}')}catch(e){}
+  function refresh(){
+    var c=0;
+    boxes.forEach(function(b){
+      var id=b.id.replace('done-',''); var link=document.getElementById('nav-'+id);
+      if(b.checked)c++; if(link)link.classList.toggle('done',b.checked);
+    });
+    document.getElementById('count').textContent=c;
+  }
+  boxes.forEach(function(b){
+    b.checked=!!saved[b.id];
+    b.addEventListener('change',function(){
+      saved[b.id]=b.checked;
+      try{localStorage.setItem('ocaml-tiff-progress',JSON.stringify(saved))}catch(e){}
+      refresh();
+    });
+  });
+  refresh();
+})();
+</script>
+</body>
+</html>
