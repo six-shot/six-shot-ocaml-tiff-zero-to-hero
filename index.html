@@ -33,6 +33,7 @@ header.hero{padding:48px 0 28px;border-bottom:1px solid var(--line)}
 .bytes{font-family:var(--mono);font-size:13px;color:var(--muted);letter-spacing:.06em;display:flex;flex-wrap:wrap;gap:6px 10px}
 .bytes b{color:var(--accent);font-weight:600}
 h1{font-family:var(--display);font-weight:800;font-size:clamp(34px,6vw,56px);line-height:1.05;margin:14px 0 14px;text-wrap:balance;letter-spacing:-.02em}
+.bytes-note{font-size:13px;color:var(--muted);margin:6px 0 0}
 .lede{font-size:18px;max-width:64ch;color:var(--muted);margin:0}
 h2{font-family:var(--display);font-weight:800;font-size:28px;line-height:1.15;margin:0 0 6px;text-wrap:balance}
 h3{font-family:var(--display);font-weight:600;font-size:19px;margin:24px 0 6px}
@@ -78,10 +79,173 @@ a{color:var(--accent)}
 
 <header class="hero">
   <div class="bytes" aria-label="A big-endian TIFF header"><b>4D 4D</b> 00 2A <span>00 00 00 08</span> <span>· "MM", magic 42, first IFD at byte 8</span></div>
+  <p class="bytes-note">These are the first 8 bytes of a big-endian TIFF file. <a href="#tiff">Section D</a> explains them.</p>
   <h1>Learn OCaml by reading ocaml-tiff</h1>
-  <p class="lede">A zero-to-hero path through the geocaml/ocaml-tiff code you already worked on for Outreachy. Every concept is taught from a real piece of this repo, in the order you need it to read the library from top to bottom. Each level ends with a small exercise you can try in <code>utop</code> or in the repo.</p>
-  <p class="progress">Progress: <span id="count">0</span> of <span id="total">0</span> levels marked done (saved in this browser only).</p>
+  <p class="lede">A zero-to-hero path through the source code of geocaml/ocaml-tiff, a pure OCaml library for reading and writing TIFF images. If you've never used OCaml, start with sections A–D: what OCaml is, installing it, first steps, and how a TIFF file is laid out. Then every concept is taught from a real piece of this repo, in the order you need it to read the library from top to bottom. Each level ends with a small exercise you can try in <code>utop</code> or in the repo.</p>
+  <p class="progress">Progress: <span id="count">0</span> of <span id="total">0</span> sections marked done (saved in this browser only).</p>
 </header>
+
+<!-- A -->
+<section class="level" id="sa" data-n="A" data-title="What OCaml is">
+  <div class="eyebrow">Start here · A <span class="where">no code yet</span></div>
+  <h2>What OCaml is</h2>
+  <p>OCaml is a programming language from France (INRIA), first released in 1996. It's used for compilers, financial trading systems (Jane Street), the Tezos blockchain, static analysers, and libraries like ocaml-tiff. Three ideas describe it:</p>
+  <h3>1. Functional first</h3>
+  <p>In OCaml you mostly build programs out of <b>functions that take values and return new values</b>, instead of changing variables step by step. A name made with <code>let</code> never changes. If you want a different value, you make a new one.</p>
+<pre><code><span class="c">(* JavaScript style: change a variable *)</span>
+<span class="c">(* let total = 0; for (x of xs) total += x; *)</span>
+
+<span class="c">(* OCaml style: describe the result *)</span>
+<span class="k">let</span> total = List.fold_left ( + ) 0 [ 8; 8; 8 ]   <span class="c">(* 24 *)</span></code></pre>
+  <p>Functions are ordinary values: you can pass them to other functions, return them, and store them. OCaml still has loops and mutable variables when you need speed (Level 6), but they're the exception.</p>
+  <h3>2. Strong static types, mostly invisible</h3>
+  <p>Every value has a type, and the compiler checks all of them <b>before</b> the program runs. You rarely write types yourself, because OCaml <b>infers</b> them. If you add an int to a float, or forget to handle a case, the program doesn't compile. A lot of bugs that would crash a JavaScript or Python program at runtime are caught here instead.</p>
+  <p>There is no <code>null</code> and no automatic conversion between number types. That feels strict at first, and it's the main reason OCaml code tends to work once it compiles.</p>
+  <h3>3. Compiled to fast native code</h3>
+  <p>The compiler turns your <code>.ml</code> files into a native program, as C or Rust does. You can also use <b>utop</b>, an interactive prompt, to try one line at a time. This guide uses utop for every “Try it” box.</p>
+  <h3>How it compares</h3>
+  <div class="tbl"><table>
+    <tr><th>If you know…</th><th>OCaml will feel…</th></tr>
+    <tr><td>TypeScript</td><td>Like strict TypeScript where every type is inferred, and every <code>switch</code> must cover all cases</td></tr>
+    <tr><td>Python</td><td>Just as short to write, but the mistakes are caught before running, not during</td></tr>
+    <tr><td>Rust</td><td>Very familiar: Rust's enums, <code>match</code> and <code>Option</code> were inspired by OCaml. There's no borrow checker; a garbage collector frees memory for you</td></tr>
+  </table></div>
+  <label class="mark"><input type="checkbox" id="done-sa"> I've read A</label>
+</section>
+
+<!-- B -->
+<section class="level" id="sb" data-n="B" data-title="Install">
+  <div class="eyebrow">Start here · B <span class="where">opam · dune · utop</span></div>
+  <h2>Install OCaml</h2>
+  <div class="tbl"><table>
+    <tr><th>Tool</th><th>What it is</th><th>Like…</th></tr>
+    <tr><td><b>opam</b></td><td>The package manager. Installs the compiler and libraries.</td><td>npm, pip, cargo</td></tr>
+    <tr><td><b>switch</b></td><td>One isolated OCaml install with its own compiler and packages</td><td>a Python virtualenv, nvm version</td></tr>
+    <tr><td><b>dune</b></td><td>The build system. Reads <code>dune</code> files and compiles.</td><td>cargo build, a Makefile</td></tr>
+    <tr><td><b>utop</b></td><td>An interactive prompt with autocompletion</td><td>the <code>node</code> or <code>python</code> REPL</td></tr>
+  </table></div>
+<pre><code><span class="c"># 1. Install opam (macOS; on Linux use your package manager)</span>
+brew install opam
+
+<span class="c"># 2. Set it up once, and answer yes when it asks to update your shell</span>
+opam init
+eval $(opam env)
+
+<span class="c"># 3. Install the tools</span>
+opam install dune utop ocaml-lsp-server ocamlformat
+
+<span class="c"># 4. Check it worked</span>
+ocaml -version
+utop</code></pre>
+  <p>In VS Code, install the <b>OCaml Platform</b> extension. It uses <code>ocaml-lsp-server</code> to show the type of anything you hover over, which is the best way to learn.</p>
+  <h3>Getting ocaml-tiff running</h3>
+<pre><code>git clone https://github.com/geocaml/ocaml-tiff
+cd ocaml-tiff
+opam switch create . --deps-only --with-test   <span class="c"># a switch just for this repo</span>
+eval $(opam env)
+dune build
+dune test</code></pre>
+  <p>Creating a local switch can take a while the first time, because it compiles OCaml itself.</p>
+  <label class="mark"><input type="checkbox" id="done-sb"> I've done B</label>
+</section>
+
+<!-- C -->
+<section class="level" id="sc" data-n="C" data-title="First steps in utop">
+  <div class="eyebrow">Start here · C <span class="where">utop</span></div>
+  <h2>First steps in utop</h2>
+  <p>Start <code>utop</code> and type each line. End every line with <code>;;</code> so utop runs it. utop prints the <b>type</b> and the <b>value</b> of each result.</p>
+  <h3>Basic types</h3>
+<pre><code>42;;                     <span class="c">(* - : int = 42 *)</span>
+3.14;;                   <span class="c">(* - : float = 3.14 *)</span>
+true &amp;&amp; not false;;      <span class="c">(* - : bool = true *)</span>
+'M';;                    <span class="c">(* - : char = 'M'           single quotes *)</span>
+<span class="s">"MM"</span>;;                   <span class="c">(* - : string = "MM"        double quotes *)</span>
+(256, <span class="s">"ImageWidth"</span>);;    <span class="c">(* - : int * string        a tuple (pair) *)</span>
+[ 8; 8; 8 ];;            <span class="c">(* - : int list            semicolons! *)</span>
+[| 10; 20 |];;           <span class="c">(* - : int array *)</span>
+();;                     <span class="c">(* - : unit = ()          "nothing" *)</span></code></pre>
+  <h3>Names and functions</h3>
+<pre><code><span class="k">let</span> width = 256;;
+<span class="k">let</span> height = 128;;
+<span class="k">let</span> area w h = w * h;;          <span class="c">(* val area : int -&gt; int -&gt; int *)</span>
+area width height;;              <span class="c">(* 32768  no brackets, no commas *)</span>
+area (width / 2) height;;        <span class="c">(* brackets only to group *)</span></code></pre>
+  <h3><code>if</code> is an expression</h3>
+<pre><code><span class="k">let</span> describe magic = <span class="k">if</span> magic = 42 <span class="k">then</span> <span class="s">"TIFF"</span> <span class="k">else</span> <span class="s">"not a TIFF"</span>;;
+describe 42;;   <span class="c">(* "TIFF" *)</span></code></pre>
+  <p><code>if</code> gives back a value, so both branches must have the same type. Equality is <code>=</code> and “not equal” is <code>&lt;&gt;</code>. (<code>==</code> exists but checks whether two things are the same object in memory, so you rarely want it.)</p>
+  <h3>Strings and printing</h3>
+<pre><code><span class="s">"Image"</span> ^ <span class="s">"Width"</span>;;                      <span class="c">(* "ImageWidth"   ^ joins strings *)</span>
+String.length <span class="s">"MM"</span>;;                     <span class="c">(* 2 *)</span>
+string_of_int 42;;                       <span class="c">(* "42" *)</span>
+print_endline <span class="s">"hello"</span>;;                  <span class="c">(* prints, returns unit *)</span>
+Printf.printf <span class="s">"%dx%d\n"</span> width height;;   <span class="c">(* 256x128 *)</span>
+Printf.sprintf <span class="s">"magic %d"</span> 42;;           <span class="c">(* returns "magic 42" *)</span></code></pre>
+  <h3>Generic types: <code>'a</code></h3>
+<pre><code>List.length;;   <span class="c">(* - : 'a list -&gt; int *)</span></code></pre>
+  <p><code>'a</code> (read “alpha”) means “any type”. <code>List.length</code> works on a list of ints, of strings, of anything. In ocaml-tiff, <code>('repr, 'kind) t</code> has two of these.</p>
+  <h3>Reading a type error</h3>
+<pre><code>1 + 1.5;;
+<span class="c">Error: This expression has type float but an expression was expected of type int</span></code></pre>
+  <p>Every type error has the same shape: “this expression has type <b>X</b>, but I expected type <b>Y</b>”. utop underlines the expression it means. Here, <code>+</code> only takes ints, and <code>1.5</code> is a float. The fix is <code>1.0 +. 1.5</code>, or <code>float_of_int 1 +. 1.5</code>.</p>
+  <p>Two more you'll see:</p>
+  <ul>
+    <li><b>“This expression has type int -&gt; int but … was expected of type int”</b>: you forgot an argument, so you're holding a function instead of its result.</li>
+    <li><b>“Warning 8: this pattern-matching is not exhaustive”</b>: a <code>match</code> is missing a case. In this repo's dev build, that warning stops the build.</li>
+  </ul>
+  <div class="ex"><div class="lbl">Exercise</div>
+    <p>Write <code>let byte_order s = …</code> that returns <code>"big"</code> for <code>"MM"</code>, <code>"little"</code> for <code>"II"</code>, and <code>"unknown"</code> otherwise. Then make it fail to compile by returning <code>0</code> in one branch, and read the error.</p>
+    <details><summary>Answer</summary>
+<pre><code><span class="k">let</span> byte_order s =
+  <span class="k">if</span> s = <span class="s">"MM"</span> <span class="k">then</span> <span class="s">"big"</span>
+  <span class="k">else if</span> s = <span class="s">"II"</span> <span class="k">then</span> <span class="s">"little"</span>
+  <span class="k">else</span> <span class="s">"unknown"</span></code></pre>
+<p>Level 2 shows the nicer way to write this, with <code>match</code>. That's how <code>Ifd.read_header</code> does it.</p></details>
+  </div>
+  <label class="mark"><input type="checkbox" id="done-sc"> I've done C</label>
+</section>
+
+<!-- D -->
+<section class="level" id="tiff" data-n="D" data-title="TIFF in one picture">
+  <div class="eyebrow">Start here · D <span class="where">the file format the code reads</span></div>
+  <h2>TIFF in one picture</h2>
+  <p>A TIFF file is a header, then one or more <b>directories</b> (IFDs) describing images, then the pixel data cut into <b>strips</b>. The directory says where everything else is, using byte offsets.</p>
+<pre aria-label="Layout of a TIFF file"><code>byte 0  ┌───────────────────────────────┐
+        │ HEADER (8 bytes)              │
+        │  4D 4D   "MM" = big-endian    │
+        │  00 2A   magic 42 = TIFF      │
+        │  00 00 00 08  first IFD → 8 ──┼──┐
+byte 8  ├───────────────────────────────┤  │
+        │ IFD (image file directory) ◄──┼──┘
+        │  00 0C   12 entries follow    │
+        │  ┌ entry: tag | type | count | value or offset
+        │  │ 256 ImageWidth    = 256    │
+        │  │ 257 ImageLength   = 128    │
+        │  │ 258 BitsPerSample = 8      │
+        │  │ 259 Compression   = 5 (LZW)│
+        │  │ 273 StripOffsets  → ───────┼──┐
+        │  │ 278 RowsPerStrip  = 64     │  │
+        │  │ 279 StripByteCounts → …    │  │
+        │  └ 317 Predictor     = 2      │  │
+        │  next IFD offset = 0 (none)   │  │
+        ├───────────────────────────────┤  │
+        │ STRIP 0  rows 0–63 (LZW) ◄────┼──┤
+        │ STRIP 1  rows 64–127 (LZW) ◄──┼──┘
+        └───────────────────────────────┘</code></pre>
+  <div class="tbl"><table>
+    <tr><th>Word</th><th>Meaning</th><th>In the code</th></tr>
+    <tr><td>Endianness</td><td>Which byte of a multi-byte number comes first. "MM" means big end first, "II" means little end first.</td><td><code>Endian.Big</code>, <code>Endian.Little</code></td></tr>
+    <tr><td>IFD</td><td>The list of tags for one image. A file can have several, chained by “next IFD offset”.</td><td><code>Ifd.t</code>, <code>all_ifds</code></td></tr>
+    <tr><td>Tag / entry</td><td>One numbered fact about the image. Small values sit inside the entry; big ones are stored elsewhere, with an offset.</td><td><code>Ifd.tag</code>, <code>Immediate</code> vs <code>Offset</code></td></tr>
+    <tr><td>Strip</td><td>A band of whole rows, stored (and compressed) together</td><td><code>process_data</code></td></tr>
+    <tr><td>Sample</td><td>One number in a pixel. Grey has 1 sample, RGB has 3.</td><td><code>samples_per_pixel</code></td></tr>
+    <tr><td>Chunky / Planar</td><td>Chunky stores RGBRGBRGB. Planar stores RRR…GGG…BBB in separate strips.</td><td><code>planar_configuration</code></td></tr>
+    <tr><td>Compression</td><td>None, LZW or Deflate in this library</td><td><code>Lzw.decode</code>, <code>Deflate.decode</code></td></tr>
+    <tr><td>Predictor 2</td><td>Each sample is stored as the difference from its left neighbour, so it compresses better. Reading undoes it by adding back.</td><td><code>undo_horizontal_differencing</code></td></tr>
+  </table></div>
+  <p>The bytes at the top of this page (<code>4D 4D 00 2A 00 00 00 08</code>) are exactly this header.</p>
+  <label class="mark"><input type="checkbox" id="done-tiff"> I've read D</label>
+</section>
 
 <!-- 0 -->
 <section class="level" id="l0" data-title="Map &amp; tools">
@@ -131,7 +295,7 @@ dune utop src           <span class="c"># a REPL with the tiff library loaded</s
   <h3>Composition with <code>|&gt;</code></h3>
 <pre><code><span class="k">let</span> set_float32 ?(offset = 0) endian buf value =
   Int32.bits_of_float value |&gt; set_uint32 ~offset endian buf</code></pre>
-  <p><code>x |&gt; f</code> means <code>f x</code>. It lets you read left to right: “turn the float into bits, then write them”. Your PR used the same idea: <code>(Tiff.ifd tiff |&gt; Tiff.Ifd.predictor)</code>.</p>
+  <p><code>x |&gt; f</code> means <code>f x</code>. It lets you read left to right: “turn the float into bits, then write them”. The tests use the same idea: <code>(Tiff.ifd tiff |&gt; Tiff.Ifd.predictor)</code>.</p>
   <h3>Integers are not floats</h3>
   <p><code>+ - * /</code> work on <code>int</code> only. Floats use <code>+. -. *. /.</code>. There's no automatic conversion: you call <code>float_of_int</code> or <code>Int64.to_int</code> yourself. That's why ifd.ml is full of <code>Int64.to_int</code>.</p>
   <div class="try"><div class="lbl">Try it</div>
@@ -177,7 +341,7 @@ add5 10;;                     <span class="c">(* 15 *)</span></code></pre></div>
 | Unknown _, _ -&gt; invalid_arg <span class="s">"Unknown planar format TIFF"</span></code></pre>
   <p>Build a tuple, then match its shape. <code>|</code> between two patterns means “either”, and <code>_</code> means “anything, I don't need it”.</p>
   <h3>Same constructor name in two types</h3>
-  <p><code>Unknown</code> appears in <code>tag</code>, <code>predictor</code>, <code>sample_format</code>, <code>photometric_interpretation</code> and <code>planar_configuration</code>. OCaml picks the right one from the expected type. When it can't tell, you qualify it: <code>Ifd.Unknown n</code>. That's why your PR first failed with <code>Horizontal</code>: the constructor is called <code>HorizontalDifferencing</code>.</p>
+  <p><code>Unknown</code> appears in <code>tag</code>, <code>predictor</code>, <code>sample_format</code>, <code>photometric_interpretation</code> and <code>planar_configuration</code>. OCaml picks the right one from the expected type. When it can't tell, you qualify it: <code>Ifd.Unknown n</code>. So writing <code>Horizontal</code> instead of <code>HorizontalDifferencing</code> fails to compile: no constructor has that name.</p>
   <div class="ex"><div class="lbl">Exercise</div>
     <p>Write <code>predictor_to_string : predictor -&gt; string</code>. Then add a fourth case, <code>FloatingPoint</code> (value 3), to the type and see which functions the compiler makes you fix.</p>
     <details><summary>Answer</summary>
@@ -324,7 +488,7 @@ List.fold_left ( + ) 0 [8; 8; 8];;               <span class="c">(* 24 *)</span>
     <tr><td><code>mutable field</code>, <code>t.f &lt;- v</code></td><td>A record field you can change</td><td><code>t.data &lt;- Some data</code> (tiff.ml:462)</td></tr>
     <tr><td><code>e1; e2</code></td><td>Do <code>e1</code> (it must return <code>unit</code>), then <code>e2</code></td><td>everywhere</td></tr>
   </table></div>
-  <h3>Your code: undoing the predictor</h3>
+  <h3>Example: undoing the predictor</h3>
 <div class="file">src/tiff.ml:246</div>
 <pre><code><span class="k">for</span> r = 0 <span class="k">to</span> rows - 1 <span class="k">do</span>
   <span class="k">let</span> row_start = r * samples_per_row <span class="k">in</span>
@@ -364,7 +528,7 @@ List.fold_left ( + ) 0 [8; 8; 8];;               <span class="c">(* 24 *)</span>
   next_ifd : Optint.Int63.t;
 }</code></pre></div>
 </div>
-  <p><code>type t</code> with no <code>=</code> is an <b>abstract type</b>. Users can hold an <code>Ifd.t</code> and pass it to <code>Ifd.width</code>, but they can't see or touch its fields. That's why your test calls <code>Tiff.Ifd.predictor</code> instead of reading the field directly.</p>
+  <p><code>type t</code> with no <code>=</code> is an <b>abstract type</b>. Users can hold an <code>Ifd.t</code> and pass it to <code>Ifd.width</code>, but they can't see or touch its fields. That's why the tests call <code>Tiff.Ifd.predictor</code> instead of reading the field directly.</p>
   <h3>Modules inside files, and re-exporting</h3>
 <pre><code><span class="k">module</span> Data = <span class="k">struct</span> … <span class="k">end</span>          <span class="c">(* tiff.ml:36, a sub-module *)</span>
 <span class="k">module</span> Ifd = Ifd                      <span class="c">(* tiff.ml:5, so users can write Tiff.Ifd *)</span>
@@ -374,7 +538,7 @@ List.fold_left ( + ) 0 [8; 8; 8];;               <span class="c">(* 24 *)</span>
   <p><code>(** … *)</code> (two stars) is documentation that odoc picks up. <code>(* … *)</code> is an ordinary comment. <code>{! Tiff.File.ro}</code> inside a doc comment is a cross-reference.</p>
   <div class="ex"><div class="lbl">Exercise</div>
     <p><code>undo_horizontal_differencing</code> isn't in <code>tiff.mli</code>. Can a test call it? What would you have to change, and why might the maintainers not want that?</p>
-    <details><summary>Answer</summary><p>No. You'd have to expose it, for example through <code>Private</code>. That's why your PR tests the predictor end to end, by comparing a plain file with a predictor file, instead of testing the helper directly. It keeps the public API small.</p></details>
+    <details><summary>Answer</summary><p>No. You'd have to expose it, for example through <code>Private</code>. That's why the predictor tests work end to end, by comparing a plain file with a predictor file, instead of testing the helper directly. It keeps the public API small.</p></details>
   </div>
   <label class="mark"><input type="checkbox" id="done-l7"> I've done level 7</label>
 </section>
@@ -406,7 +570,7 @@ List.fold_left ( + ) 0 [8; 8; 8];;               <span class="c">(* 24 *)</span>
   <p>This always closes the file, even if <code>fn</code> raises an exception. It works like <code>try/finally</code>.</p>
   <h3>One walker, two jobs</h3>
   <p><code>process_data</code> takes three callbacks: <code>~on_strip ~on_value ~after_strip</code>. <code>read_data</code> passes callbacks that decompress and fill the array, and <code>write_data</code> passes callbacks that copy from the array and write. It's the same loop for both, so reading and writing can't disagree about strip layout.</p>
-  <p>Labels also guard against mixing up arguments. That's why Patrick asked for <code>~width ~samples_per_pixel ~bytes_per_sample ~endian</code>: four ints in a row are easy to swap, but four labelled ints aren't.</p>
+  <p>Labels also guard against mixing up arguments. That's why <code>undo_horizontal_differencing</code> takes <code>~width ~samples_per_pixel ~bytes_per_sample ~endian</code>: four ints in a row are easy to swap, but four labelled ints aren't.</p>
   <div class="ex"><div class="lbl">Exercise</div>
     <p>Write a fake <code>File.ro</code> that serves bytes from a string in memory, so you could test without a file on disk.</p>
     <details><summary>Answer</summary>
@@ -428,7 +592,7 @@ List.fold_left ( + ) 0 [8; 8; 8];;               <span class="c">(* 24 *)</span>
   <h2>Errors: exceptions and Result</h2>
   <div class="tbl"><table>
     <tr><th>Tool</th><th>Raises</th><th>Used for</th></tr>
-    <tr><td><code>failwith "msg"</code></td><td><code>Failure</code></td><td>The file is bad or unsupported (<code>"Unsupported compression"</code>, your bit-depth message)</td></tr>
+    <tr><td><code>failwith "msg"</code></td><td><code>Failure</code></td><td>The file is bad or unsupported (<code>"Unsupported compression"</code>, the bit-depth message in <code>apply_predictor</code>)</td></tr>
     <tr><td><code>invalid_arg "msg"</code></td><td><code>Invalid_argument</code></td><td>The caller used the API wrongly (no plane given for a planar TIFF)</td></tr>
     <tr><td><code>Fmt.invalid_arg "%a" pp x</code></td><td><code>Invalid_argument</code></td><td>The same, with a formatted message</td></tr>
     <tr><td><code>List.find</code>, <code>lookup_exn</code></td><td><code>Not_found</code></td><td>A tag is missing</td></tr>
@@ -449,7 +613,7 @@ List.fold_left ( + ) 0 [8; 8; 8];;               <span class="c">(* 24 *)</span>
 | Error (`Msg err) -&gt; failwith (<span class="s">"DEFLATE decompression error: "</span> ^ err)</code></pre>
   <p><code>('a, 'e) result</code> is <code>Ok x | Error e</code>, so the error is a value instead of an exception. A backtick name like <code>`Msg</code> is a <b>polymorphic variant</b>: a constructor you can use without declaring a type first. <code>^</code> joins two strings.</p>
   <h3>Formatted messages</h3>
-  <p><code>Printf.sprintf "…%d…" n</code> builds a string, and the compiler checks that <code>%d</code> gets an int. The <code>\</code> at the end of a line inside a string continues it on the next line and drops the leading spaces. Your bit-depth error message uses that.</p>
+  <p><code>Printf.sprintf "…%d…" n</code> builds a string, and the compiler checks that <code>%d</code> gets an int. The <code>\</code> at the end of a line inside a string continues it on the next line and drops the leading spaces. The bit-depth error message in <code>apply_predictor</code> uses that.</p>
   <div class="ex"><div class="lbl">Exercise</div>
     <p>Rewrite <code>predictor</code> using <code>lookup</code> (the <code>option</code> version) instead of <code>try … with</code>.</p>
     <details><summary>Answer</summary>
@@ -479,9 +643,9 @@ List.fold_left ( + ) 0 [8; 8; 8];;               <span class="c">(* 24 *)</span>
   (Cstruct.get_uint8 buf buf_index <span class="k">lsl</span> (Sys.int_size - 8))
   <span class="k">asr</span> (Sys.int_size - 8)</code></pre>
   <p>It pushes the byte to the top of the native int, then uses an arithmetic shift to bring it back down so the sign bit spreads. So 0xFF becomes −1. OCaml ints are 63 bits on 64-bit machines (one bit is used by the runtime), which is why the code uses <code>Sys.int_size</code> instead of 64.</p>
-  <p>Your mask, <code>(1 lsl (8 * bytes_per_sample)) - 1</code>, gives 255 or 65535.</p>
+  <p>The predictor mask, <code>(1 lsl (8 * bytes_per_sample)) - 1</code>, gives 255 or 65535.</p>
   <h3>Flattening for tests</h3>
-  <p>Your <code>assert_equal_ba</code> uses <code>Bigarray.reshape_1 a size</code> to view any N-D array as one long 1-D array without copying, then compares element by element. That way a failure reports the exact index.</p>
+  <p>The test helper <code>assert_equal_ba</code> uses <code>Bigarray.reshape_1 a size</code> to view any N-D array as one long 1-D array without copying, then compares element by element. That way a failure reports the exact index.</p>
   <div class="ex"><div class="lbl">Exercise</div>
     <p>What does <code>Endian.int16</code> return for the bytes <code>FF FE</code> in big endian? Work it out, then check it in utop with <code>Tiff.Endian.int16 Big (Cstruct.of_string "\xff\xfe")</code>.</p>
     <details><summary>Answer</summary><p><code>uint16</code> reads 0xFFFE = 65534. Sign-extending from 16 bits gives −2.</p></details>
@@ -539,7 +703,7 @@ List.fold_left ( + ) 0 [8; 8; 8];;               <span class="c">(* 24 *)</span>
   </ul>
   <h3>Asserting well</h3>
 <pre><code><span class="k">let</span> assert_equal_int = assert_equal ~printer:Int.to_string</code></pre>
-  <p>Without <code>~printer</code>, a failure only says “not equal”. With it, you see both values. That's why Patrick wanted <code>assert_equal_ba</code>: plain <code>assert_equal</code> on two big arrays can't print them usefully.</p>
+  <p>Without <code>~printer</code>, a failure only says “not equal”. With it, you see both values. That's why the tests have <code>assert_equal_ba</code>: plain <code>assert_equal</code> on two big arrays can't print them usefully.</p>
   <p><code>test/dune</code> runs the binary with <code>-runner sequential</code> because OUnit's default runner forks, and that breaks Eio.</p>
   <div class="ex"><div class="lbl">Exercise</div>
     <p>Using <code>check_predictor_matches</code>, write the test you'd add for a predictor file with 8-bit planar data, and say which data file you'd need.</p>
@@ -547,7 +711,7 @@ List.fold_left ( + ) 0 [8; 8; 8];;               <span class="c">(* 24 *)</span>
 <pre><code><span class="k">let</span> test_lzw_predictor_planar backend _ =
   check_predictor_matches backend Tiff.Uint8 <span class="s">"./data/planar.tiff"</span>
     <span class="s">"./data/planar_lzw_predictor.tiff"</span></code></pre>
-<p>It won't work as written: planar files need <code>~plane</code> in <code>Tiff.data</code>. That's the follow-up tracked in #87.</p></details>
+<p>It won't work as written: planar files need <code>~plane</code> in <code>Tiff.data</code>. That's the follow-up tracked in <a href="https://github.com/geocaml/ocaml-tiff/issues/87">geocaml/ocaml-tiff#87</a>.</p></details>
   </div>
   <label class="mark"><input type="checkbox" id="done-l12"> I've done level 12</label>
 </section>
@@ -563,11 +727,32 @@ List.fold_left ( + ) 0 [8; 8; 8];;               <span class="c">(* 24 *)</span>
   <label class="mark"><input type="checkbox" id="done-l13"> I've done level 13</label>
 </section>
 
+<!-- functors -->
+<section class="level" id="functors" data-n="F" data-title="Functors">
+  <div class="eyebrow">Extra <span class="where">not used in ocaml-tiff, but everywhere else</span></div>
+  <h2>A short note on functors</h2>
+  <p>A <b>functor</b> is a function from modules to modules. You give it a module, and it builds a new module for you. The standard library's maps and sets are made this way. ocaml-tiff doesn't define any functors, but you'll meet them in almost every other OCaml project.</p>
+<pre><code><span class="c">(* Map.Make needs a module with a type t and a compare function *)</span>
+<span class="k">module</span> TagMap = Map.Make (<span class="k">struct</span>
+  <span class="k">type</span> t = Tiff.Ifd.tag
+  <span class="k">let</span> compare = compare
+<span class="k">end</span>)
+
+<span class="k">let</span> names =
+  TagMap.empty
+  |&gt; TagMap.add Tiff.Ifd.ImageWidth <span class="s">"width"</span>
+  |&gt; TagMap.add Tiff.Ifd.Predictor <span class="s">"predictor"</span>
+
+<span class="k">let</span> () = print_endline (TagMap.find Tiff.Ifd.Predictor names)   <span class="c">(* predictor *)</span></code></pre>
+  <p><code>Map.Make</code> is the functor. The <code>struct … end</code> is the module you pass in. <code>TagMap</code> is the new module it builds, with <code>empty</code>, <code>add</code>, <code>find</code> and the rest, all typed for <code>tag</code> keys.</p>
+  <p>Ready for more? Read the functors chapter in Real World OCaml, then look at how Eio or Irmin use them.</p>
+</section>
+
 <!-- trace -->
 <section class="level" id="trace" data-title="Full read path">
   <div class="eyebrow">Hero <span class="where">every level in one call</span></div>
   <h2>Trace one read from end to end</h2>
-  <p>Open the files side by side and follow <code>Tiff.data tiff ro</code> on an LZW file with a predictor, for example <code>u16bit_rgb_lzw_predictor_be.tiff</code> from your PR.</p>
+  <p>Open the files side by side and follow <code>Tiff.data tiff ro</code> on an LZW file with a predictor, for example <code>u16bit_rgb_lzw_predictor_be.tiff</code> from the test data.</p>
   <ol class="trace">
     <li><code>Tiff_unix.with_open_in path @@ fun ro -&gt;</code> gives you a <code>File.ro</code> closure (L8).</li>
     <li><code>Tiff.from_file Tiff.Uint16 ro</code> (tiff.ml:400) calls <code>Ifd.read_header</code>, which reads 16 bytes and matches <code>"MM"</code> to <code>Big</code> and magic 42 to <code>Tiff</code> (L2, L3).</li>
@@ -575,7 +760,7 @@ List.fold_left ( + ) 0 [8; 8; 8];;               <span class="c">(* 24 *)</span>
     <li><code>all_ifds</code> follows <code>next_ifd</code> until it hits 0 (L5).</li>
     <li><code>Tiff.data</code> (tiff.ml:442) checks the cache with a <code>when</code> guard, picks a reader with the <code>get_repr</code> GADT (L3, L11), and calls <code>Data.read_data</code>.</li>
     <li><code>read_data</code> creates a <code>Genarray</code> of <code>[| h; w; 3 |]</code> and hands three callbacks to <code>process_data</code> (L8).</li>
-    <li>For each strip, <code>on_strip</code> reads the compressed bytes, then <code>Lzw.decode</code> runs, then <code>apply_predictor</code>, which matches <code>HorizontalDifferencing</code> and <code>Chunky</code> to get stride 3 and runs your loop with <code>~endian:Big</code> (L2, L6).</li>
+    <li>For each strip, <code>on_strip</code> reads the compressed bytes, then <code>Lzw.decode</code> runs, then <code>apply_predictor</code>, which matches <code>HorizontalDifferencing</code> and <code>Chunky</code> to get stride 3 and runs the loop from Level 6 with <code>~endian:Big</code> (L2, L6).</li>
     <li>For each pixel and channel, <code>on_value</code> reads 2 bytes with <code>Endian.uint16</code> and calls <code>Genarray.set arr [| y; x; c |]</code> (L1, L10).</li>
     <li>The test compares the result with the uncompressed <code>u16bit.tiff</code> using <code>assert_equal_ba</code> (L12).</li>
   </ol>
@@ -591,8 +776,48 @@ List.fold_left ( + ) 0 [8; 8; 8];;               <span class="c">(* 24 *)</span>
     <li><b>Real World OCaml</b> (dev.realworldocaml.org) for variants, records, error handling and GADTs. Its GADT chapter explains Level 11 in depth.</li>
     <li><b>OCaml.org “Tour of OCaml” and the Bigarray manual page</b> for the standard library.</li>
     <li><b>The TIFF 6.0 spec</b> (Section 2 for the header and IFD, Section 14 for the predictor), so you know what the code is trying to do.</li>
-    <li><b>Small next contributions:</b> handle <code>Uint32</code> in <code>get_repr</code> (it currently says “coming soon”), add tile support (the tile accessors already exist in ifd.mli), or planar predictor support (#87).</li>
+    <li><b>Small next contributions:</b> handle <code>Uint32</code> in <code>get_repr</code> (it currently says “coming soon”), add tile support (the tile accessors already exist in ifd.mli), or planar predictor support (<a href="https://github.com/geocaml/ocaml-tiff/issues/87">geocaml/ocaml-tiff#87</a>).</li>
   </ul>
+</section>
+
+<!-- glossary -->
+<section class="level" id="glossary" data-n="G" data-title="Glossary">
+  <div class="eyebrow">Reference</div>
+  <h2>Glossary</h2>
+  <div class="tbl"><table>
+    <tr><th>Term</th><th>Meaning</th><th>Level</th></tr>
+    <tr><td>Expression</td><td>Anything that produces a value. In OCaml, almost everything is one, including <code>if</code> and <code>match</code>.</td><td>C</td></tr>
+    <tr><td>Binding</td><td>A name given to a value with <code>let</code>. It can't be changed.</td><td>1</td></tr>
+    <tr><td>Type inference</td><td>The compiler works out the types for you</td><td>A, 1</td></tr>
+    <tr><td><code>'a</code> (type variable)</td><td>“Any type”. Makes a function or type generic.</td><td>C</td></tr>
+    <tr><td><code>unit</code>, <code>()</code></td><td>The type and value meaning “nothing useful”</td><td>C, 6</td></tr>
+    <tr><td>Partial application</td><td>Giving a function some of its arguments to get a new function</td><td>1</td></tr>
+    <tr><td>Labelled / optional argument</td><td><code>~name:v</code> must be named; <code>?name</code> can be left out</td><td>1, 8</td></tr>
+    <tr><td>Variant, constructor</td><td>A type made of named cases (<code>Big | Little</code>). Each case is a constructor.</td><td>2</td></tr>
+    <tr><td>Pattern matching</td><td><code>match x with</code> a list of shapes; runs the first one that fits</td><td>2</td></tr>
+    <tr><td>Exhaustive</td><td>A match that covers every case. The compiler warns if it doesn't.</td><td>2</td></tr>
+    <tr><td>Record</td><td>A value with named fields, like <code>{ xoff; yoff; xsize; ysize }</code></td><td>3</td></tr>
+    <tr><td><code>option</code></td><td><code>None</code> or <code>Some x</code>; replaces null</td><td>3</td></tr>
+    <tr><td>Fold</td><td>Walk a list, carrying an accumulator</td><td>4</td></tr>
+    <tr><td>Tail call</td><td>A recursive call that's the last thing a function does; runs like a loop</td><td>5</td></tr>
+    <tr><td><code>ref</code></td><td>A mutable box: <code>!r</code> reads, <code>r := v</code> writes</td><td>6</td></tr>
+    <tr><td>Module</td><td>A named group of types and values. Every <code>.ml</code> file is one.</td><td>7</td></tr>
+    <tr><td>Signature, <code>.mli</code></td><td>The public interface of a module</td><td>7</td></tr>
+    <tr><td>Abstract type</td><td><code>type t</code> without its definition, so outsiders can't see inside</td><td>7</td></tr>
+    <tr><td>Higher-order function</td><td>A function that takes or returns a function</td><td>4, 8</td></tr>
+    <tr><td>Exception</td><td>An error that jumps out until a <code>try … with</code> catches it</td><td>9</td></tr>
+    <tr><td><code>result</code></td><td><code>Ok x</code> or <code>Error e</code>; an error as a normal value</td><td>9</td></tr>
+    <tr><td>Polymorphic variant</td><td>A constructor with a backtick (<code>`Msg</code>) that needs no type declaration</td><td>9</td></tr>
+    <tr><td>Cstruct</td><td>A library for typed access to raw byte buffers</td><td>10</td></tr>
+    <tr><td>Bigarray</td><td>Large N-dimensional numeric arrays; the image you get back</td><td>10</td></tr>
+    <tr><td>GADT</td><td>A variant whose constructors choose its type parameters</td><td>11</td></tr>
+    <tr><td>Locally abstract type</td><td><code>(type a b)</code>, which lets each match branch refine a type</td><td>11</td></tr>
+    <tr><td>Functor</td><td>A function from modules to modules, like <code>Map.Make</code></td><td>F</td></tr>
+    <tr><td><code>external</code></td><td>Declares a function written in C</td><td>13</td></tr>
+    <tr><td>opam, switch</td><td>Package manager; one isolated install</td><td>B</td></tr>
+    <tr><td>dune, utop</td><td>Build system; interactive prompt</td><td>B</td></tr>
+    <tr><td>IFD, tag, strip, predictor</td><td>The parts of a TIFF file</td><td>D</td></tr>
+  </table></div>
 </section>
 
 </main>
@@ -605,7 +830,7 @@ List.fold_left ( + ) 0 [8; 8; 8];;               <span class="c">(* 24 *)</span>
   sections.forEach(function(s){
     var a=document.createElement('a'); a.href='#'+s.id; a.id='nav-'+s.id;
     var n=document.createElement('span'); n.className='n';
-    n.textContent=/^l\d+$/.test(s.id)?s.id.slice(1):'•';
+    n.textContent=s.getAttribute('data-n')||(/^l\d+$/.test(s.id)?s.id.slice(1):'•');
     var t=document.createElement('span'); t.innerHTML=s.getAttribute('data-title');
     a.appendChild(n); a.appendChild(t); rail.appendChild(a);
   });

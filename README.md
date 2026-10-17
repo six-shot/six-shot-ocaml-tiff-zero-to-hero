@@ -3,7 +3,14 @@
 A zero-to-hero guide to OCaml, taught entirely from the source code of
 [geocaml/ocaml-tiff](https://github.com/geocaml/ocaml-tiff), a pure OCaml TIFF reader and writer.
 
-Each level teaches one OCaml idea using a real piece of the library, then ends with a small exercise:
+New to OCaml? Start with sections A–D:
+
+- A. What OCaml is
+- B. Installing opam, dune and utop
+- C. First steps in utop, including how to read a type error
+- D. TIFF in one picture
+
+Then each level teaches one OCaml idea using a real piece of the library, and most end with a small exercise:
 
 0. Repo map and dune
 1. `let`, functions, optional arguments, `|>`
@@ -20,7 +27,7 @@ Each level teaches one OCaml idea using a real piece of the library, then ends w
 12. Testing with OUnit2
 13. C stubs with `external`
 
-It finishes by tracing one `Tiff.data` call through the whole library.
+It finishes with a short note on functors, a trace of one `Tiff.data` call through the whole library, and a glossary.
 
 
 
