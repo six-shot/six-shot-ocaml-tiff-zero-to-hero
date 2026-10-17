@@ -29,12 +29,14 @@ Then each level teaches one OCaml idea using a real piece of the library, and mo
 
 It finishes with a short note on functors, a trace of one `Tiff.data` call through the whole library, and a glossary.
 
+## How to use it
 
+Open `index.html` in a browser, or read it online at
+https://six-shot.github.io/six-shot-ocaml-tiff-zero-to-hero/ once GitHub Pages is on.
+
+Type every example yourself, try each exercise before opening the answer, and read
+the compiler's error messages carefully. That is how the language sticks.
 
 ## Credits
 
 Code excerpts come from ocaml-tiff, © 2025 geocaml developers, MIT License.
-
-# ocaml-tiff-zero-to-hero-
-# ocaml-tiff-zero-to-hero-
-# six-shot-ocaml-tiff-zero-to-hero
